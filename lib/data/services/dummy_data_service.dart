@@ -4,7 +4,7 @@ class DummyDataService {
   static List<Expense> getDummyExpenses() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     return [
       Expense(
         id: '1',
@@ -13,6 +13,8 @@ class DummyDataService {
         category: 'Coffee',
         date: today.subtract(const Duration(days: 0)),
         description: 'Morning coffee',
+        currency: '£',
+        accountId: 'wallet_1',
       ),
       Expense(
         id: '2',
@@ -21,6 +23,8 @@ class DummyDataService {
         category: 'Food',
         date: today.subtract(const Duration(days: 1)),
         description: 'Burrito bowl',
+        currency: '£',
+        accountId: 'wallet_1',
       ),
       Expense(
         id: '3',
@@ -29,6 +33,8 @@ class DummyDataService {
         category: 'Transport',
         date: today.subtract(const Duration(days: 2)),
         description: 'Morning commute',
+        currency: '£',
+        accountId: 'bank_1',
       ),
       Expense(
         id: '4',
@@ -37,6 +43,8 @@ class DummyDataService {
         category: 'Salary',
         date: today.subtract(const Duration(days: 3)),
         description: 'Monthly salary',
+        currency: '£',
+        accountId: 'bank_1',
       ),
       Expense(
         id: '5',
@@ -45,6 +53,8 @@ class DummyDataService {
         category: 'Entertainment',
         date: today.subtract(const Duration(days: 4)),
         description: 'Avengers movie',
+        currency: '£',
+        accountId: 'wallet_1',
       ),
       Expense(
         id: '6',
@@ -104,4 +114,4 @@ class DummyDataService {
       ),
     ];
   }
-} 
+}

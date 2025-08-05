@@ -14,6 +14,8 @@ Expense _$ExpenseFromJson(Map<String, dynamic> json) => Expense(
   date: DateTime.parse(json['date'] as String),
   description: json['description'] as String?,
   notionId: json['notionId'] as String?,
+  currency: json['currency'] as String? ?? '\$',
+  accountId: json['accountId'] as String? ?? 'default',
 );
 
 Map<String, dynamic> _$ExpenseToJson(Expense instance) => <String, dynamic>{
@@ -24,4 +26,6 @@ Map<String, dynamic> _$ExpenseToJson(Expense instance) => <String, dynamic>{
   'date': instance.date.toIso8601String(),
   'description': instance.description,
   'notionId': instance.notionId,
+  'currency': instance.currency,
+  'accountId': instance.accountId,
 };

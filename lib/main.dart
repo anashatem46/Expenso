@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'logic/bloc/expense_bloc.dart';
+import 'logic/bloc/account_bloc.dart';
+import 'logic/bloc/account_event.dart';
 import 'data/api/notion_api_service.dart';
 import 'data/storage/local_storage_service.dart';
 import 'presentation/screens/main_navigation.dart';
@@ -26,6 +28,7 @@ class MyApp extends StatelessWidget {
                 storageService: LocalStorageService(),
               ),
         ),
+        BlocProvider(create: (context) => AccountBloc()..add(LoadAccounts())),
       ],
       child: MaterialApp(
         title: 'Expenso Tracker',

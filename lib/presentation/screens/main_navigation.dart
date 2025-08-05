@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
-import 'expense_list_screen.dart';
+import 'wallet_screen.dart';
+import 'statistics_screen.dart';
 import '../widgets/add_transaction_modal.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -13,16 +14,16 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0;
 
+  void switchToTab(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
   final List<Widget> _screens = [
     const HomeScreen(),
-    const ExpenseListScreen(),
-    const Center(
-      child: Text(
-        'Stats\nComing Soon',
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 18),
-      ),
-    ),
+    const WalletScreen(),
+    const StatisticsScreen(),
     const Center(
       child: Text(
         'Settings\nComing Soon',
@@ -57,7 +58,7 @@ class _MainNavigationState extends State<MainNavigation> {
           _buildNavItem(Icons.home, 'Home', 0),
           _buildNavItem(Icons.account_balance_wallet, 'Wallet', 1),
           const SizedBox(width: 40), // Space for FAB
-          _buildNavItem(Icons.bar_chart, 'Stats', 2),
+          _buildNavItem(Icons.bar_chart, 'Statistics', 2),
           _buildNavItem(Icons.settings, 'Settings', 3),
         ],
       ),
@@ -75,13 +76,13 @@ class _MainNavigationState extends State<MainNavigation> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isSelected ? Colors.green[600] : Colors.grey[600]),
+          Icon(icon, color: isSelected ? Colors.teal[600] : Colors.grey[600]),
           const SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              color: isSelected ? Colors.green[600] : Colors.grey[600],
+              color: isSelected ? Colors.teal[600] : Colors.grey[600],
             ),
           ),
         ],
@@ -94,7 +95,7 @@ class _MainNavigationState extends State<MainNavigation> {
       onPressed: () {
         _showAddTransactionModal(context);
       },
-      backgroundColor: Colors.green[600],
+      backgroundColor: Colors.teal[600],
       child: const Icon(Icons.add, color: Colors.white),
     );
   }

@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../../logic/bloc/expense_bloc.dart';
 import '../../logic/bloc/expense_event.dart';
 import '../../logic/bloc/expense_state.dart';
-import '../widgets/transaction_card.dart';
-import '../widgets/month_selector.dart';
-import '../widgets/spending_chart.dart';
-import '../widgets/add_transaction_modal.dart';
+import 'all_transactions_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +14,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _isBalanceExpanded = true;
+
   @override
   void initState() {
     super.initState();
@@ -29,16 +27,17 @@ class _HomeScreenState extends State<HomeScreen> {
     return BlocBuilder<ExpenseBloc, ExpenseState>(
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: Colors.grey[50],
           body: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(),
-                _buildBalanceSection(state),
-                _buildChartSection(state),
-                _buildMonthSelector(state),
-                Expanded(child: _buildTransactionList(state)),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(),
+                  _buildBalanceCard(state),
+                  _buildTransactionsHistory(state),
+                ],
+              ),
             ),
           ),
         );
@@ -50,186 +49,240 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Good afternoon,',
+                  style: TextStyle(
+                    fontSize: MediaQuery.of(context).size.width * 0.04,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Text(
+                  'Anas Hatem',
+                  style: TextStyle(
+                    fontSize: MediaQuery.of(context).size.width * 0.06,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              // TODO: Navigate to notifications
+            },
+            icon: const Icon(
+              Icons.notifications_outlined,
+              color: Colors.grey,
+              size: 28,
+            ),
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalanceCard(ExpenseState state) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.05,
+      ),
+      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.06),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF4DB6AC), // Teal
+            Color(0xFF26A69A), // Darker teal
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4DB6AC).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Anas Hatem ',
+              const Text(
+                'Total Balance',
                 style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                DateFormat('EEEE, d MMMM').format(DateTime.now()),
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.6),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isBalanceExpanded = !_isBalanceExpanded;
+                  });
+                },
+                child: Icon(
+                  _isBalanceExpanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: Colors.white,
                 ),
               ),
             ],
           ),
-          IconButton(
-            onPressed: () {
-              // TODO: Navigate to analytics/settings
-            },
-            icon: Icon(
-              Icons.analytics_outlined,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBalanceSection(ExpenseState state) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            'Current Balance',
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             '\$${state.totalBalance.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: 32,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 36,
               fontWeight: FontWeight.bold,
-              color:
-                  state.totalBalance >= 0 ? Colors.green[600] : Colors.red[600],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChartSection(ExpenseState state) {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainer,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Spending Trend',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
+          if (_isBalanceExpanded) ...[
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildIncomeExpenseItem(
+                    icon: Icons.arrow_downward,
+                    label: 'Income',
+                    amount: state.totalIncome,
+                    isIncome: true,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: _buildIncomeExpenseItem(
+                    icon: Icons.arrow_upward,
+                    label: 'Expenses',
+                    amount: state.totalExpenses,
+                    isIncome: false,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(height: 120, child: SpendingChart(data: state.chartData)),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildMonthSelector(ExpenseState state) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: MonthSelector(
-        selectedMonth: state.selectedMonth,
-        onMonthSelected: (month) {
-          context.read<ExpenseBloc>().add(SelectMonth(month));
-        },
-      ),
-    );
-  }
-
-  Widget _buildTransactionList(ExpenseState state) {
-    if (state.status == ExpenseStatus.loading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (state.status == ExpenseStatus.error) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildIncomeExpenseItem({
+    required IconData icon,
+    required String label,
+    required double amount,
+    required bool isIncome,
+  }) {
+    return Column(
+      children: [
+        Row(
           children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
-            const SizedBox(height: 16),
+            Icon(icon, color: Colors.white70, size: 16),
+            const SizedBox(width: 8),
             Text(
-              state.errorMessage ?? 'An error occurred',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                context.read<ExpenseBloc>().add(const LoadExpenses());
-              },
-              child: const Text('Retry'),
+              label,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
           ],
         ),
-      );
-    }
+        const SizedBox(height: 4),
+        Text(
+          '\$${amount.toStringAsFixed(2)}',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
 
-    final transactions = state.expensesForSelectedMonth;
+  Widget _buildTransactionsHistory(ExpenseState state) {
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.05),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Transactions History',
+                  style: TextStyle(
+                    fontSize: MediaQuery.of(context).size.width * 0.045,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Navigate to all transactions screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AllTransactionsScreen(),
+                    ),
+                  );
+                },
+                child: Text(
+                  'See all',
+                  style: TextStyle(
+                    color: Colors.teal[600],
+                    fontWeight: FontWeight.w500,
+                    fontSize: MediaQuery.of(context).size.width * 0.035,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        _buildTransactionsList(state),
+      ],
+    );
+  }
 
-    if (transactions.isEmpty) {
-      return Center(
+  Widget _buildTransactionsList(ExpenseState state) {
+    final recentTransactions = state.expenses.take(4).toList();
+
+    if (recentTransactions.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(40),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.receipt_long,
+              Icons.receipt_long_outlined,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+              color: Colors.grey[400],
             ),
             const SizedBox(height: 16),
             Text(
-              'No transactions this month',
+              'No transactions yet',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                color: Colors.grey[600],
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Add your first transaction',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ],
         ),
@@ -237,20 +290,127 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: transactions.length,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.05,
+      ),
+      itemCount: recentTransactions.length,
       itemBuilder: (context, index) {
-        final transaction = transactions[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: TransactionCard(
-            expense: transaction,
-            onDelete: () {
-              context.read<ExpenseBloc>().add(DeleteExpense(transaction.id));
-            },
+        final transaction = recentTransactions[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              _buildTransactionIcon(transaction.category),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transaction.title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getRelativeDate(transaction.date),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '${transaction.amount >= 0 ? '+' : '-'}\$${transaction.amount.abs().toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color:
+                      transaction.amount >= 0
+                          ? Colors.green[600]
+                          : Colors.red[600],
+                ),
+              ),
+            ],
           ),
         );
       },
     );
+  }
+
+  Widget _buildTransactionIcon(String category) {
+    Color backgroundColor;
+    Widget icon;
+
+    switch (category.toLowerCase()) {
+      case 'food':
+        backgroundColor = Colors.orange[100]!;
+        icon = const Text('🍔', style: TextStyle(fontSize: 24));
+        break;
+      case 'coffee':
+        backgroundColor = Colors.brown[100]!;
+        icon = const Text('☕', style: TextStyle(fontSize: 24));
+        break;
+      case 'transport':
+        backgroundColor = Colors.blue[100]!;
+        icon = const Text('🚗', style: TextStyle(fontSize: 24));
+        break;
+      case 'shopping':
+        backgroundColor = Colors.pink[100]!;
+        icon = const Text('🛍️', style: TextStyle(fontSize: 24));
+        break;
+      case 'salary':
+        backgroundColor = Colors.green[100]!;
+        icon = const Text('💰', style: TextStyle(fontSize: 24));
+        break;
+      case 'freelance':
+        backgroundColor = Colors.purple[100]!;
+        icon = const Text('💼', style: TextStyle(fontSize: 24));
+        break;
+      default:
+        backgroundColor = Colors.grey[100]!;
+        icon = const Text('📝', style: TextStyle(fontSize: 24));
+    }
+
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Center(child: icon),
+    );
+  }
+
+  String _getRelativeDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final transactionDate = DateTime(date.year, date.month, date.day);
+
+    if (transactionDate == today) {
+      return 'Today';
+    } else if (transactionDate == yesterday) {
+      return 'Yesterday';
+    } else {
+      return DateFormat('MMM d, y').format(date);
+    }
   }
 }

@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../logic/bloc/expense_bloc.dart';
 import '../../logic/bloc/expense_event.dart';
-import '../../logic/bloc/expense_state.dart';
+import '../../logic/bloc/account_bloc.dart';
+import '../../logic/bloc/account_state.dart';
 import '../../data/models/expense.dart';
+import '../../data/models/account.dart';
 
 class AddTransactionModal extends StatefulWidget {
   const AddTransactionModal({super.key});
@@ -22,6 +24,8 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
   DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
   bool _isIncome = false; // New toggle for income/expense
+  String? _selectedAccountId; // Selected account ID
+  String _selectedCurrency = '£'; // Selected currency
 
   final List<String> _expenseCategories = [
     'Food',
@@ -60,45 +64,98 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(),
-            _buildTransactionTypeToggle(),
-            _buildDateSelector(),
-            const SizedBox(height: 16),
-            _buildAmountField(),
-            _buildCategoryAndReason(),
-            _buildSubmitButton(),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+    final screenHeight = MediaQuery.of(context).size.height;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    final availableHeight = screenHeight - keyboardHeight;
+
+    return BlocBuilder<AccountBloc, AccountState>(
+      builder: (context, accountState) {
+        // Set initial account if not selected
+        if (_selectedAccountId == null && accountState.accounts.isNotEmpty) {
+          _selectedAccountId = accountState.accounts.first.id;
+        }
+
+        return ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: availableHeight * 0.9),
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildHeader(),
+                Flexible(
+                  child: Form(
+                    key: _formKey,
+                    child: SingleChildScrollView(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildTransactionTypeToggle(),
+                          _buildAccountSelector(accountState),
+                          _buildDateSelector(),
+                          const SizedBox(height: 12),
+                          _buildAmountField(),
+                          _buildCategoryAndReason(),
+                          _buildSubmitButton(),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(
+        MediaQuery.of(context).size.width * 0.05,
+        MediaQuery.of(context).size.width * 0.05,
+        MediaQuery.of(context).size.width * 0.05,
+        MediaQuery.of(context).size.width * 0.02,
+      ),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1)),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'Add Transaction',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          Expanded(
+            child: Text(
+              'Add Transaction',
+              style: TextStyle(
+                fontSize: MediaQuery.of(context).size.width * 0.055,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
           ),
           IconButton(
             onPressed: () {
               Navigator.pop(context);
             },
             icon: const Icon(Icons.close),
+            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
           ),
         ],
       ),
@@ -107,7 +164,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
 
   Widget _buildTransactionTypeToggle() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         children: [
           Expanded(
@@ -121,7 +178,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: !_isIncome ? Colors.red[100] : Colors.grey[100],
+                  color: !_isIncome ? Colors.red[50] : Colors.grey[100],
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     bottomLeft: Radius.circular(12),
@@ -166,13 +223,13 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: _isIncome ? Colors.green[100] : Colors.grey[100],
+                  color: _isIncome ? Colors.teal[50] : Colors.grey[100],
                   borderRadius: const BorderRadius.only(
                     topRight: Radius.circular(12),
                     bottomRight: Radius.circular(12),
                   ),
                   border: Border.all(
-                    color: _isIncome ? Colors.green[600]! : Colors.grey[300]!,
+                    color: _isIncome ? Colors.teal[600]! : Colors.grey[300]!,
                   ),
                 ),
                 child: Center(
@@ -181,7 +238,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                     children: [
                       Icon(
                         Icons.add_circle_outline,
-                        color: _isIncome ? Colors.green[600] : Colors.grey[600],
+                        color: _isIncome ? Colors.teal[600] : Colors.grey[600],
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -200,6 +257,92 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccountSelector(AccountState accountState) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: MediaQuery.of(context).size.width * 0.05,
+        vertical: MediaQuery.of(context).size.height * 0.01,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Select Account',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+          if (accountState.accounts.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: const Text(
+                'No accounts available. Please add an account first.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            )
+          else
+            DropdownButtonFormField<String>(
+              value: _selectedAccountId,
+              isExpanded: true,
+              menuMaxHeight: 200,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+              ),
+              items:
+                  accountState.accounts.map((account) {
+                    return DropdownMenuItem<String>(
+                      value: account.id,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(account.icon, color: account.color, size: 18),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              '${account.name} • ${account.number}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedAccountId = value;
+                });
+              },
+              validator: (value) {
+                if (value == null) {
+                  return 'Please select an account';
+                }
+                return null;
+              },
+            ),
         ],
       ),
     );
@@ -263,21 +406,21 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
 
   Widget _buildAmountField() {
     return Container(
-      margin: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: TextFormField(
         controller: _amountController,
         keyboardType: TextInputType.number,
         style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         decoration: InputDecoration(
           labelText: 'Amount',
-          prefixText: '\$',
+          prefixText: '£',
           border: const OutlineInputBorder(
             borderRadius: BorderRadius.all(Radius.circular(12)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(
-              color: _isIncome ? Colors.green[600]! : Colors.red[600]!,
+              color: _isIncome ? Colors.teal[600]! : Colors.red[600]!,
               width: 2,
             ),
           ),
@@ -298,7 +441,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
 
   Widget _buildCategoryAndReason() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         children: [
           _buildCategorySelector(),
@@ -368,16 +511,19 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
 
   Widget _buildSubmitButton() {
     return Container(
-      margin: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       width: double.infinity,
       child: ElevatedButton(
         onPressed: _isLoading ? null : _submitForm,
         style: ElevatedButton.styleFrom(
           backgroundColor: _isIncome ? Colors.green[600] : Colors.red[600],
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          elevation: 2,
+          shadowColor: (_isIncome ? Colors.green[600] : Colors.red[600])
+              ?.withOpacity(0.3),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
         child:
@@ -451,6 +597,8 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
         category: _selectedCategory,
         date: _selectedDate,
         description: null,
+        currency: _selectedCurrency,
+        accountId: _selectedAccountId ?? 'default',
       );
 
       context.read<ExpenseBloc>().add(AddExpense(expense));

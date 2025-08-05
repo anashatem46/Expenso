@@ -6,11 +6,7 @@ class TransactionCard extends StatelessWidget {
   final Expense expense;
   final VoidCallback? onDelete;
 
-  const TransactionCard({
-    super.key,
-    required this.expense,
-    this.onDelete,
-  });
+  const TransactionCard({super.key, required this.expense, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +41,7 @@ class TransactionCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   _formatTransactionDate(expense.date),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -61,7 +54,8 @@ class TransactionCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: expense.amount >= 0 ? Colors.green[600] : Colors.red[600],
+                  color:
+                      expense.amount >= 0 ? Colors.green[600] : Colors.red[600],
                 ),
               ),
               if (onDelete != null)
@@ -86,35 +80,47 @@ class TransactionCard extends StatelessWidget {
     switch (expense.category.toLowerCase()) {
       case 'food':
         emoji = '🍔';
-        backgroundColor = Colors.orange[100]!;
+        backgroundColor = Colors.orange[100] ?? Colors.grey[100]!;
         break;
       case 'coffee':
         emoji = '☕';
-        backgroundColor = Colors.brown[100]!;
+        backgroundColor = Colors.brown[100] ?? Colors.grey[100]!;
         break;
       case 'transport':
         emoji = '🚗';
-        backgroundColor = Colors.blue[100]!;
+        backgroundColor = Colors.blue[100] ?? Colors.grey[100]!;
         break;
       case 'shopping':
         emoji = '🛍️';
-        backgroundColor = Colors.purple[100]!;
+        backgroundColor = Colors.purple[100] ?? Colors.grey[100]!;
         break;
       case 'entertainment':
         emoji = '🎬';
-        backgroundColor = Colors.pink[100]!;
+        backgroundColor = Colors.pink[100] ?? Colors.grey[100]!;
         break;
       case 'health':
         emoji = '🏥';
-        backgroundColor = Colors.red[100]!;
+        backgroundColor = Colors.red[100] ?? Colors.grey[100]!;
         break;
       case 'education':
         emoji = '📚';
-        backgroundColor = Colors.indigo[100]!;
+        backgroundColor = Colors.indigo[100] ?? Colors.grey[100]!;
         break;
       case 'salary':
         emoji = '💰';
-        backgroundColor = Colors.green[100]!;
+        backgroundColor = Colors.green[100] ?? Colors.grey[100]!;
+        break;
+      case 'freelance':
+        emoji = '💼';
+        backgroundColor = Colors.purple[100] ?? Colors.grey[100]!;
+        break;
+      case 'investment':
+        emoji = '📈';
+        backgroundColor = Colors.green[100] ?? Colors.grey[100]!;
+        break;
+      case 'bonus':
+        emoji = '🎁';
+        backgroundColor = Colors.orange[100] ?? Colors.grey[100]!;
         break;
       default:
         emoji = '📝';
@@ -128,12 +134,7 @@ class TransactionCard extends StatelessWidget {
         color: backgroundColor,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Center(
-        child: Text(
-          emoji,
-          style: const TextStyle(fontSize: 20),
-        ),
-      ),
+      child: Center(child: Text(emoji, style: const TextStyle(fontSize: 20))),
     );
   }
 
@@ -150,4 +151,4 @@ class TransactionCard extends StatelessWidget {
       return '${DateFormat('EEEE, d MMMM yyyy').format(date)} — ${expense.category}';
     }
   }
-} 
+}
