@@ -107,7 +107,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
 
   Widget _buildTransactionTypeToggle() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
       child: Row(
         children: [
           Expanded(
@@ -211,9 +211,9 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: 7,
+        itemCount: 10,
         itemBuilder: (context, index) {
-          final date = DateTime.now().subtract(Duration(days: 3 - index));
+          final date = DateTime.now().subtract(Duration(days: 5 - index));
           final isSelected = date.day == _selectedDate.day;
 
           return Padding(

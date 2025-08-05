@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'logic/bloc/expense_bloc.dart';
 import 'data/api/notion_api_service.dart';
 import 'data/storage/local_storage_service.dart';
-import 'presentation/screens/home_screen.dart';
+import 'presentation/screens/main_navigation.dart';
 
 void main() {
   runApp(const MyApp());
@@ -86,7 +86,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
         themeMode: ThemeMode.system,
-        home: const HomeScreen(),
+        home: const MainNavigation(),
         debugShowCheckedModeBanner: false,
       ),
     );

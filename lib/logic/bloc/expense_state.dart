@@ -71,16 +71,36 @@ class ExpenseState extends Equatable {
 
   List<FlSpot> get chartData {
     final spots = <FlSpot>[];
-    final sortedExpenses = List<Expense>.from(expensesForSelectedMonth);
-    sortedExpenses.sort((a, b) => a.date.compareTo(b.date));
+    final expenses = expensesForSelectedMonth;
 
-    double cumulative = 0.0;
-    for (int i = 0; i < sortedExpenses.length; i++) {
-      cumulative += sortedExpenses[i].amount;
-      spots.add(FlSpot(i.toDouble(), cumulative));
+    if (expenses.isEmpty) return spots;
+
+    // Group expenses by date
+    final Map<String, double> dailyExpenses = {};
+    for (final expense in expenses) {
+      final dateKey =
+          '${expense.date.year}-${expense.date.month}-${expense.date.day}';
+      // Only count negative amounts (expenses)
+      if (expense.amount < 0) {
+        dailyExpenses[dateKey] =
+            (dailyExpenses[dateKey] ?? 0) + expense.amount.abs();
+      }
+    }
+
+    // Convert to FlSpot list
+    final sortedDates = dailyExpenses.keys.toList()..sort();
+    for (int i = 0; i < sortedDates.length; i++) {
+      final amount = dailyExpenses[sortedDates[i]]!;
+      spots.add(FlSpot(i.toDouble(), amount));
     }
 
     return spots;
+  }
+
+  List<Expense> get expensesByDate {
+    final sortedExpenses = List<Expense>.from(expenses);
+    sortedExpenses.sort((a, b) => b.date.compareTo(a.date));
+    return sortedExpenses;
   }
 
   @override

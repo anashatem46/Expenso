@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../logic/providers/expense_provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../logic/bloc/expense_bloc.dart';
+import '../../logic/bloc/expense_event.dart';
+import '../../logic/bloc/expense_state.dart';
 import '../../data/models/expense.dart';
 import '../widgets/expense_card.dart';
 import '../widgets/loading_widget.dart';
 import '../widgets/error_widget.dart' as custom;
-import 'add_expense_screen.dart';
 
 class ExpenseListScreen extends StatefulWidget {
   const ExpenseListScreen({super.key});
@@ -20,7 +21,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     super.initState();
     // Load expenses when screen initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ExpenseProvider>().loadExpenses();
+      context.read<ExpenseBloc>().add(const LoadExpenses());
     });
   }
 
@@ -34,49 +35,47 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
-              context.read<ExpenseProvider>().refreshExpenses();
+              context.read<ExpenseBloc>().add(const LoadExpenses());
             },
           ),
         ],
       ),
-      body: Consumer<ExpenseProvider>(
-        builder: (context, provider, child) {
-          switch (provider.state) {
-            case ExpenseState.initial:
-            case ExpenseState.loading:
+      body: BlocBuilder<ExpenseBloc, ExpenseState>(
+        builder: (context, state) {
+          switch (state.status) {
+            case ExpenseStatus.initial:
+            case ExpenseStatus.loading:
               return const LoadingWidget();
 
-            case ExpenseState.error:
+            case ExpenseStatus.error:
               return custom.ErrorWidget(
-                message: provider.errorMessage ?? 'An error occurred',
-                onRetry: () => provider.loadExpenses(),
+                message: state.errorMessage ?? 'An error occurred',
+                onRetry:
+                    () => context.read<ExpenseBloc>().add(const LoadExpenses()),
               );
 
-            case ExpenseState.loaded:
-              return _buildExpenseList(provider);
+            case ExpenseStatus.loaded:
+              return _buildExpenseList(state);
           }
         },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddExpense(context),
-        tooltip: 'Add Expense',
-        child: const Icon(Icons.add),
       ),
     );
   }
 
-  Widget _buildExpenseList(ExpenseProvider provider) {
-    final expenses = provider.expensesByDate;
+  Widget _buildExpenseList(ExpenseState state) {
+    final expenses = state.expensesByDate;
 
     if (expenses.isEmpty) {
       return _buildEmptyState();
     }
 
     return RefreshIndicator(
-      onRefresh: () => provider.refreshExpenses(),
+      onRefresh: () async {
+        context.read<ExpenseBloc>().add(const LoadExpenses());
+      },
       child: Column(
         children: [
-          _buildSummaryCard(provider),
+          _buildSummaryCard(state),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -99,7 +98,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
     );
   }
 
-  Widget _buildSummaryCard(ExpenseProvider provider) {
+  Widget _buildSummaryCard(ExpenseState state) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -134,7 +133,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
                 ),
               ),
               Text(
-                '\$${provider.totalAmount.toStringAsFixed(2)}',
+                '\$${state.totalBalance.toStringAsFixed(2)}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 24,
@@ -145,7 +144,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '${provider.expenses.length} expenses',
+            '${state.expenses.length} expenses',
             style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
         ],
@@ -175,13 +174,6 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  void _navigateToAddExpense(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AddExpenseScreen()),
     );
   }
 
@@ -300,7 +292,7 @@ class _ExpenseListScreenState extends State<ExpenseListScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  context.read<ExpenseProvider>().deleteExpense(expense.id);
+                  context.read<ExpenseBloc>().add(DeleteExpense(expense.id));
                 },
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
                 child: const Text('Delete'),

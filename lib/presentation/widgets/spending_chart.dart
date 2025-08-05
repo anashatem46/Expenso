@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
 
 class SpendingChart extends StatelessWidget {
   final List<FlSpot> data;
@@ -47,10 +48,22 @@ class SpendingChart extends StatelessWidget {
           ),
         ],
         minX: 0,
-        maxX: (data.length - 1).toDouble(),
-        minY: data.map((spot) => spot.y).reduce((a, b) => a < b ? a : b) - 10,
-        maxY: data.map((spot) => spot.y).reduce((a, b) => a > b ? a : b) + 10,
+        maxX: data.isNotEmpty ? (data.length - 1).toDouble() : 1,
+        minY: 0,
+        maxY:
+            data.isNotEmpty
+                ? data.map((e) => e.y).reduce((a, b) => a > b ? a : b) * 1.2
+                : 100,
       ),
     );
+  }
+
+  double _getHorizontalInterval() {
+    if (data.isEmpty) return 20;
+    final maxY = data.map((e) => e.y).reduce((a, b) => a > b ? a : b);
+    if (maxY <= 50) return 10;
+    if (maxY <= 200) return 50;
+    if (maxY <= 500) return 100;
+    return 200;
   }
 }
