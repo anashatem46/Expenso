@@ -1,22 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
 import '../../data/models/account.dart';
-import '../../data/services/account_service.dart';
 import '../../logic/bloc/account_bloc.dart';
 import '../../logic/bloc/account_event.dart';
 
-class AddAccountModal extends StatefulWidget {
-  const AddAccountModal({Key? key}) : super(key: key);
+class AddAccountScreen extends StatefulWidget {
+  const AddAccountScreen({Key? key}) : super(key: key);
 
   @override
-  State<AddAccountModal> createState() => _AddAccountModalState();
+  State<AddAccountScreen> createState() => _AddAccountScreenState();
 }
 
-class _AddAccountModalState extends State<AddAccountModal> {
+class _AddAccountScreenState extends State<AddAccountScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _balanceController = TextEditingController();
   final _numberController = TextEditingController();
+  final _uuid = Uuid();
+
+  final _nameFocusNode = FocusNode();
+  final _balanceFocusNode = FocusNode();
+  final _numberFocusNode = FocusNode();
 
   String _selectedType = 'wallet';
   int _selectedIconIndex = 0;
@@ -32,7 +37,6 @@ class _AddAccountModalState extends State<AddAccountModal> {
     Icons.monetization_on,
     Icons.business_center,
   ];
-
   final List<MaterialColor> _availableColors = [
     Colors.orange,
     Colors.blue,
@@ -49,75 +53,37 @@ class _AddAccountModalState extends State<AddAccountModal> {
     _nameController.dispose();
     _balanceController.dispose();
     _numberController.dispose();
+    _nameFocusNode.dispose();
+    _balanceFocusNode.dispose();
+    _numberFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    final availableHeight = screenHeight - keyboardHeight;
-
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(
-        maxHeight: availableHeight * 0.9,
-        maxWidth: MediaQuery.of(context).size.width,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width,
+    return Scaffold(
+      appBar: AppBar(title: const Text('Add Account')),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(),
-                Padding(
-                  padding: EdgeInsets.all(
-                    MediaQuery.of(context).size.width * 0.05,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildAccountTypeSelector(),
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
-                      _buildNameField(),
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
-                      _buildBalanceField(),
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
-                      _buildNumberField(),
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
-                      _buildIconSelector(),
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
-                      _buildColorSelector(),
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.03,
-                      ),
-                      _buildSubmitButton(),
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
-                    ],
-                  ),
-                ),
+                _buildAccountTypeSelector(),
+                const SizedBox(height: 20),
+                _buildNameField(),
+                const SizedBox(height: 20),
+                _buildBalanceField(),
+                const SizedBox(height: 20),
+                _buildNumberField(),
+                const SizedBox(height: 20),
+                _buildIconSelector(),
+                const SizedBox(height: 20),
+                _buildColorSelector(),
+                const SizedBox(height: 30),
+                _buildSubmitButton(),
               ],
             ),
           ),
@@ -126,32 +92,16 @@ class _AddAccountModalState extends State<AddAccountModal> {
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.05),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Add Account',
-              style: TextStyle(
-                fontSize: MediaQuery.of(context).size.width * 0.05,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close),
-            constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildAccountTypeSelector() {
-    final typeOptions = AccountService.getAccountTypeOptions();
+    final typeOptions = [
+      {
+        'type': 'wallet',
+        'name': 'Wallet',
+        'icon': Icons.account_balance_wallet,
+      },
+      {'type': 'bank', 'name': 'Bank Account', 'icon': Icons.credit_card},
+      {'type': 'investment', 'name': 'Investment', 'icon': Icons.trending_up},
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,7 +123,10 @@ class _AddAccountModalState extends State<AddAccountModal> {
               return Padding(
                 padding: const EdgeInsets.only(right: 16),
                 child: GestureDetector(
-                  onTap: () => setState(() => _selectedType = option['type']),
+                  onTap:
+                      () => setState(
+                        () => _selectedType = option['type'] as String,
+                      ),
                   child: Container(
                     width: 100,
                     decoration: BoxDecoration(
@@ -189,21 +142,21 @@ class _AddAccountModalState extends State<AddAccountModal> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          option['icon'],
+                          option['icon'] as IconData,
                           color:
                               isSelected ? Colors.teal[600] : Colors.grey[600],
                           size: 24,
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          option['name'],
+                          option['name'] as String,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color:
                                 isSelected
-                                    ? Colors.teal[600]
-                                    : Colors.grey[600],
+                                    ? Colors.teal[700]
+                                    : Colors.grey[700],
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -230,6 +183,11 @@ class _AddAccountModalState extends State<AddAccountModal> {
         const SizedBox(height: 8),
         TextFormField(
           controller: _nameController,
+          focusNode: _nameFocusNode,
+          textInputAction: TextInputAction.next,
+          onFieldSubmitted: (_) {
+            _balanceFocusNode.requestFocus();
+          },
           decoration: InputDecoration(
             hintText: 'Enter account name',
             border: OutlineInputBorder(
@@ -263,7 +221,12 @@ class _AddAccountModalState extends State<AddAccountModal> {
         const SizedBox(height: 8),
         TextFormField(
           controller: _balanceController,
-          keyboardType: TextInputType.number,
+          focusNode: _balanceFocusNode,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.next,
+          onFieldSubmitted: (_) {
+            _numberFocusNode.requestFocus();
+          },
           decoration: InputDecoration(
             hintText: '0.00',
             prefixText: '£ ',
@@ -301,8 +264,10 @@ class _AddAccountModalState extends State<AddAccountModal> {
         const SizedBox(height: 8),
         TextFormField(
           controller: _numberController,
+          focusNode: _numberFocusNode,
+          textInputAction: TextInputAction.done,
           decoration: InputDecoration(
-            hintText: 'Enter account number or identifier',
+            hintText: 'e.g., •••• 1234',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: Colors.grey[300]!),
@@ -312,12 +277,6 @@ class _AddAccountModalState extends State<AddAccountModal> {
               borderSide: BorderSide(color: Colors.teal[400]!),
             ),
           ),
-          validator: (value) {
-            if (value?.isEmpty ?? true) {
-              return 'Please enter account number or identifier';
-            }
-            return null;
-          },
         ),
       ],
     );
@@ -328,7 +287,7 @@ class _AddAccountModalState extends State<AddAccountModal> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Choose Icon',
+          'Select Icon',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
@@ -338,6 +297,7 @@ class _AddAccountModalState extends State<AddAccountModal> {
             scrollDirection: Axis.horizontal,
             itemCount: _availableIcons.length,
             itemBuilder: (context, index) {
+              final icon = _availableIcons[index];
               final isSelected = _selectedIconIndex == index;
 
               return Padding(
@@ -346,7 +306,6 @@ class _AddAccountModalState extends State<AddAccountModal> {
                   onTap: () => setState(() => _selectedIconIndex = index),
                   child: Container(
                     width: 60,
-                    height: 60,
                     decoration: BoxDecoration(
                       color: isSelected ? Colors.teal[50] : Colors.grey[50],
                       border: Border.all(
@@ -357,9 +316,9 @@ class _AddAccountModalState extends State<AddAccountModal> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      _availableIcons[index],
+                      icon,
                       color: isSelected ? Colors.teal[600] : Colors.grey[600],
-                      size: 24,
+                      size: 28,
                     ),
                   ),
                 ),
@@ -376,7 +335,7 @@ class _AddAccountModalState extends State<AddAccountModal> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Choose Color',
+          'Select Color',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
@@ -386,6 +345,7 @@ class _AddAccountModalState extends State<AddAccountModal> {
             scrollDirection: Axis.horizontal,
             itemCount: _availableColors.length,
             itemBuilder: (context, index) {
+              final color = _availableColors[index];
               final isSelected = _selectedColorIndex == index;
 
               return Padding(
@@ -394,23 +354,32 @@ class _AddAccountModalState extends State<AddAccountModal> {
                   onTap: () => setState(() => _selectedColorIndex = index),
                   child: Container(
                     width: 60,
-                    height: 60,
                     decoration: BoxDecoration(
-                      color: _availableColors[index][100],
+                      color: color.shade100,
                       border: Border.all(
-                        color: isSelected ? Colors.black87 : Colors.grey[300]!,
-                        width: isSelected ? 3 : 2,
+                        color:
+                            isSelected ? Colors.teal[400]! : Colors.grey[300]!,
+                        width: 2,
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child:
-                        isSelected
-                            ? const Icon(
-                              Icons.check,
-                              color: Colors.white,
-                              size: 24,
-                            )
-                            : null,
+                    child: Center(
+                      child:
+                          isSelected
+                              ? Icon(
+                                Icons.check,
+                                color: color.shade800,
+                                size: 28,
+                              )
+                              : Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                    ),
                   ),
                 ),
               );
@@ -424,38 +393,36 @@ class _AddAccountModalState extends State<AddAccountModal> {
   Widget _buildSubmitButton() {
     return SizedBox(
       width: double.infinity,
-      height: 50,
       child: ElevatedButton(
-        onPressed: _submitForm,
+        onPressed: () {
+          if (_formKey.currentState!.validate()) {
+            final newAccount = Account(
+              id: _uuid.v4(),
+              name: _nameController.text,
+              type: _selectedType,
+              balance: double.parse(_balanceController.text),
+              number: _numberController.text,
+              iconCodePoint: _availableIcons[_selectedIconIndex].codePoint,
+              colorValue: _availableColors[_selectedColorIndex].value,
+              lastModified: DateTime.now(),
+            );
+
+            context.read<AccountBloc>().add(AddAccount(newAccount));
+            Navigator.pop(context);
+          }
+        },
         style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
           backgroundColor: Colors.teal[600],
-          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: const Text(
           'Add Account',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 16, color: Colors.white),
         ),
       ),
     );
-  }
-
-  void _submitForm() {
-    if (_formKey.currentState?.validate() ?? false) {
-      final account = Account(
-        id: AccountService.generateAccountId(_selectedType),
-        name: _nameController.text,
-        type: _selectedType,
-        balance: double.tryParse(_balanceController.text) ?? 0.0,
-        number: _numberController.text,
-        iconCodePoint: _availableIcons[_selectedIconIndex].codePoint,
-        colorValue: _availableColors[_selectedColorIndex].value,
-      );
-
-      context.read<AccountBloc>().add(AddAccount(account));
-      Navigator.pop(context);
-    }
   }
 }

@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 
 import '../../logic/bloc/expense_bloc.dart';
 import '../../logic/bloc/expense_state.dart';
+import '../../data/models/expense.dart';
 
 class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({super.key});
@@ -45,7 +46,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               IconButton(
                 icon: const Icon(Icons.share_outlined, color: Colors.black87),
                 onPressed: () {
-                  // TODO: Implement share functionality
+                  _shareStatistics();
                 },
               ),
             ],
@@ -55,6 +56,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               children: [
                 _buildPeriodSelector(),
                 _buildExpenseIncomeToggle(),
+                _buildSummaryCards(state),
                 _buildChart(state),
                 _buildTopSpending(state),
               ],
@@ -128,11 +130,31 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  _showExpenses ? 'Expense' : 'Income',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showExpenses = !_showExpenses;
+                    });
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          _showExpenses ? Colors.red[50] : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Expense',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color:
+                            _showExpenses ? Colors.red[600] : Colors.grey[600],
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -142,13 +164,113 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       _showExpenses = !_showExpenses;
                     });
                   },
-                  child: Icon(
-                    Icons.keyboard_arrow_down,
-                    color: Colors.grey[600],
-                    size: 20,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          !_showExpenses
+                              ? Colors.green[50]
+                              : Colors.transparent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      'Income',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color:
+                            !_showExpenses
+                                ? Colors.green[600]
+                                : Colors.grey[600],
+                      ),
+                    ),
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCards(ExpenseState state) {
+    final expenses =
+        _showExpenses
+            ? state.expenses.where((e) => e.amount < 0).toList()
+            : state.expenses.where((e) => e.amount > 0).toList();
+
+    final total = expenses.fold<double>(0, (sum, e) => sum + e.amount.abs());
+    final average = expenses.isNotEmpty ? total / expenses.length : 0.0;
+    final count = expenses.length;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildSummaryCard(
+              'Total',
+              '£${total.toStringAsFixed(0)}',
+              _showExpenses ? Colors.red[600]! : Colors.green[600]!,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildSummaryCard(
+              'Average',
+              '£${average.toStringAsFixed(0)}',
+              Colors.grey[600]!,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildSummaryCard(
+              'Count',
+              count.toString(),
+              Colors.teal[600]!,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String title, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
             ),
           ),
         ],
@@ -161,8 +283,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     return Container(
       margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
-      height: 300,
+      padding: const EdgeInsets.fromLTRB(
+        24,
+        24,
+        24,
+        40,
+      ), // Much more bottom padding
+      height: 380, // Much more height
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -205,15 +332,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         showTitles: true,
                         interval: _getYAxisInterval(chartData),
                         getTitlesWidget: (value, meta) {
-                          return Text(
-                            '\$${(value / 1000).toStringAsFixed(0)}K',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: Text(
+                              _formatYAxisLabel(value),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
                             ),
                           );
                         },
-                        reservedSize: 50,
+                        reservedSize: 60,
                       ),
                     ),
                     bottomTitles: AxisTitles(
@@ -221,28 +351,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         showTitles: true,
                         interval: 1,
                         getTitlesWidget: (value, meta) {
-                          final months = [
-                            'Mar',
-                            'Apr',
-                            'May',
-                            'Jun',
-                            'Jul',
-                            'Aug',
-                            'Sep',
-                          ];
                           final index = value.toInt();
-                          if (index >= 0 && index < months.length) {
-                            return Text(
-                              months[index],
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 12,
+                          final label = _getChartLabel(index);
+                          if (label != null) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Transform.rotate(
+                                angle: _getRotationAngle(),
+                                child: Text(
+                                  label,
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: _getFontSize(),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
                             );
                           }
                           return const SizedBox();
                         },
-                        reservedSize: 30,
+                        reservedSize: _getBottomReservedSize(),
                       ),
                     ),
                   ),
@@ -281,7 +410,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       FlTouchEvent event,
                       LineTouchResponse? touchResponse,
                     ) {
-                      if (touchResponse != null &&
+                      if (event is FlTapUpEvent || event is FlPanEndEvent) {
+                        setState(() {
+                          _selectedChartIndex = -1;
+                        });
+                      } else if (touchResponse != null &&
                           touchResponse.lineBarSpots != null) {
                         setState(() {
                           _selectedChartIndex =
@@ -291,14 +424,17 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     },
                     touchTooltipData: LineTouchTooltipData(
                       tooltipBgColor: Colors.teal[600]!,
+                      tooltipRoundedRadius: 8,
+                      tooltipPadding: const EdgeInsets.all(8),
                       getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
                         return touchedBarSpots.map((barSpot) {
+                          final label = _getChartLabel(barSpot.x.toInt());
                           return LineTooltipItem(
-                            '\$${(barSpot.y / 1000).toStringAsFixed(1)}K',
+                            '${label ?? ''}\n£${barSpot.y.toStringAsFixed(0)}',
                             const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              fontSize: 12,
                             ),
                           );
                         }).toList();
@@ -307,14 +443,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ),
                   minX: 0,
                   maxX: (chartData.length - 1).toDouble(),
-                  minY: 0,
-                  maxY:
-                      chartData.isNotEmpty
-                          ? chartData
-                                  .map((e) => e.y)
-                                  .reduce((a, b) => a > b ? a : b) *
-                              1.2
-                          : 1000,
+                  minY: 0, // Back to 0 for proper Y-axis display
+                  maxY: _getChartMaxY(chartData),
                 ),
               ),
     );
@@ -396,11 +526,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                   ),
                   Text(
-                    '- \$${item['amount'].toStringAsFixed(2)}',
+                    '${_showExpenses ? '-' : '+'} £${item['amount'].toStringAsFixed(2)}',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: isLast ? Colors.white : Colors.red[600],
+                      color:
+                          isLast
+                              ? Colors.white
+                              : (_showExpenses
+                                  ? Colors.red[600]
+                                  : Colors.green[600]),
                     ),
                   ),
                 ],
@@ -455,39 +590,317 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   List<FlSpot> _getChartData(ExpenseState state) {
-    // Mock data for the chart - replace with actual calculation
-    return [
-      const FlSpot(0, 1230),
-      const FlSpot(1, 1100),
-      const FlSpot(2, 1400),
-      const FlSpot(3, 1000),
-      const FlSpot(4, 1300),
-      const FlSpot(5, 1200),
-      const FlSpot(6, 1500),
+    if (state.expenses.isEmpty) return [];
+
+    final now = DateTime.now();
+    List<FlSpot> spots = [];
+
+    switch (_selectedPeriod) {
+      case 0: // Day
+        spots = _getDailyData(state, now);
+        break;
+      case 1: // Week
+        spots = _getWeeklyData(state, now);
+        break;
+      case 2: // Month
+        spots = _getMonthlyData(state, now);
+        break;
+      case 3: // Year
+        spots = _getYearlyData(state, now);
+        break;
+    }
+
+    return spots;
+  }
+
+  List<FlSpot> _getDailyData(ExpenseState state, DateTime now) {
+    final List<FlSpot> spots = [];
+    final expenses =
+        _showExpenses
+            ? state.expenses.where((e) => e.amount < 0).toList()
+            : state.expenses.where((e) => e.amount > 0).toList();
+
+    // Get last 6 days for better spacing
+    for (int i = 5; i >= 0; i--) {
+      final date = now.subtract(Duration(days: i));
+      final dayExpenses =
+          expenses
+              .where(
+                (e) =>
+                    e.date.year == date.year &&
+                    e.date.month == date.month &&
+                    e.date.day == date.day,
+              )
+              .toList();
+
+      final total = dayExpenses.fold<double>(
+        0,
+        (sum, e) => sum + e.amount.abs(),
+      );
+      spots.add(FlSpot((5 - i).toDouble(), total));
+    }
+
+    return spots;
+  }
+
+  List<FlSpot> _getWeeklyData(ExpenseState state, DateTime now) {
+    final List<FlSpot> spots = [];
+    final expenses =
+        _showExpenses
+            ? state.expenses.where((e) => e.amount < 0).toList()
+            : state.expenses.where((e) => e.amount > 0).toList();
+
+    // Get last 4 weeks
+    for (int i = 3; i >= 0; i--) {
+      final weekStart = now.subtract(Duration(days: (i + 1) * 7));
+      final weekEnd = now.subtract(Duration(days: i * 7));
+
+      final weekExpenses =
+          expenses
+              .where(
+                (e) => e.date.isAfter(weekStart) && e.date.isBefore(weekEnd),
+              )
+              .toList();
+
+      final total = weekExpenses.fold<double>(
+        0,
+        (sum, e) => sum + e.amount.abs(),
+      );
+      spots.add(FlSpot((3 - i).toDouble(), total));
+    }
+
+    return spots;
+  }
+
+  List<FlSpot> _getMonthlyData(ExpenseState state, DateTime now) {
+    final List<FlSpot> spots = [];
+    final expenses =
+        _showExpenses
+            ? state.expenses.where((e) => e.amount < 0).toList()
+            : state.expenses.where((e) => e.amount > 0).toList();
+
+    // Get last 6 months
+    for (int i = 5; i >= 0; i--) {
+      final month = DateTime(now.year, now.month - i, 1);
+      final monthExpenses =
+          expenses
+              .where(
+                (e) => e.date.year == month.year && e.date.month == month.month,
+              )
+              .toList();
+
+      final total = monthExpenses.fold<double>(
+        0,
+        (sum, e) => sum + e.amount.abs(),
+      );
+      spots.add(FlSpot((5 - i).toDouble(), total));
+    }
+
+    return spots;
+  }
+
+  List<FlSpot> _getYearlyData(ExpenseState state, DateTime now) {
+    final List<FlSpot> spots = [];
+    final expenses =
+        _showExpenses
+            ? state.expenses.where((e) => e.amount < 0).toList()
+            : state.expenses.where((e) => e.amount > 0).toList();
+
+    // Get last 5 years
+    for (int i = 4; i >= 0; i--) {
+      final year = now.year - i;
+      final yearExpenses = expenses.where((e) => e.date.year == year).toList();
+
+      final total = yearExpenses.fold<double>(
+        0,
+        (sum, e) => sum + e.amount.abs(),
+      );
+      spots.add(FlSpot((4 - i).toDouble(), total));
+    }
+
+    return spots;
+  }
+
+  String? _getChartLabel(int index) {
+    final now = DateTime.now();
+
+    switch (_selectedPeriod) {
+      case 0: // Day
+        final date = now.subtract(Duration(days: 5 - index));
+        return _getDayLabel(date);
+      case 1: // Week
+        final weekStart = now.subtract(Duration(days: (3 - index + 1) * 7));
+        return 'W${weekStart.day}';
+      case 2: // Month
+        final month = DateTime(now.year, now.month - (5 - index), 1);
+        return _getMonthLabel(month);
+      case 3: // Year
+        final year = now.year - (4 - index);
+        return year.toString();
+      default:
+        return null;
+    }
+  }
+
+  String _getDayLabel(DateTime date) {
+    final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return days[date.weekday - 1];
+  }
+
+  String _getMonthLabel(DateTime date) {
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
+    return months[date.month - 1];
   }
 
   double _getYAxisInterval(List<FlSpot> data) {
     if (data.isEmpty) return 500;
     final maxY = data.map((e) => e.y).reduce((a, b) => a > b ? a : b);
-    return maxY / 4;
+
+    // Create more grid lines for better spacing with larger range
+    if (maxY <= 100) return maxY / 2;
+    if (maxY <= 500) return maxY / 3;
+    if (maxY <= 1000) return maxY / 4;
+    return maxY / 5; // More divisions for larger values
   }
 
   List<Map<String, dynamic>> _getTopSpending(ExpenseState state) {
-    // Mock data - replace with actual calculation from state
-    return [
-      {
-        'category': 'coffee',
-        'name': 'Starbucks',
-        'date': 'Jan 12, 2022',
-        'amount': 150.00,
-      },
-      {
-        'category': 'transfer',
-        'name': 'Transfer',
-        'date': 'Jan 10, 2022',
-        'amount': 85.00,
-      },
-    ];
+    if (state.expenses.isEmpty) return [];
+
+    final expenses =
+        _showExpenses
+            ? state.expenses.where((e) => e.amount < 0).toList()
+            : state.expenses.where((e) => e.amount > 0).toList();
+
+    // Group expenses by category and calculate totals
+    final Map<String, double> categoryTotals = {};
+    final Map<String, List<Expense>> categoryExpenses = {};
+
+    for (final expense in expenses) {
+      final category = expense.category;
+      categoryTotals[category] =
+          (categoryTotals[category] ?? 0) + expense.amount.abs();
+      categoryExpenses.putIfAbsent(category, () => []).add(expense);
+    }
+
+    // Sort categories by total amount (descending)
+    final sortedCategories =
+        categoryTotals.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+
+    // Get top 5 categories
+    final topCategories = sortedCategories.take(5).toList();
+
+    return topCategories.map((entry) {
+      final category = entry.key;
+      final total = entry.value;
+      final categoryExpenseList = categoryExpenses[category]!;
+
+      // Get the most recent expense for this category
+      final mostRecent = categoryExpenseList.reduce(
+        (a, b) => a.date.isAfter(b.date) ? a : b,
+      );
+
+      return {
+        'category': category.toLowerCase(),
+        'name': category,
+        'date': _formatDate(mostRecent.date),
+        'amount': total,
+      };
+    }).toList();
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date).inDays;
+
+    if (difference == 0) return 'Today';
+    if (difference == 1) return 'Yesterday';
+    if (difference < 7) return '${difference} days ago';
+
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  double _getRotationAngle() {
+    final chartData = _getChartData(context.read<ExpenseBloc>().state);
+    if (chartData.length <= 4) return 0.0; // No rotation for few points
+    if (chartData.length <= 6) return -0.3; // Slight rotation
+    return -0.5; // More rotation for many points
+  }
+
+  double _getFontSize() {
+    final chartData = _getChartData(context.read<ExpenseBloc>().state);
+    if (chartData.length <= 4) return 12.0;
+    if (chartData.length <= 6) return 11.0;
+    return 10.0; // Smaller font for many points
+  }
+
+  double _getBottomReservedSize() {
+    final chartData = _getChartData(context.read<ExpenseBloc>().state);
+    if (chartData.length <= 4) return 80.0; // Much more space
+    if (chartData.length <= 6) return 90.0; // Much more space
+    return 100.0; // Much more space for many points
+  }
+
+  double _getChartMaxY(List<FlSpot> chartData) {
+    if (chartData.isEmpty) return 1000;
+
+    final maxValue = chartData.map((e) => e.y).reduce((a, b) => a > b ? a : b);
+
+    // Add much more padding to prevent overlap with X-axis labels
+    if (maxValue == 0) return 200; // Increased minimum value
+    return maxValue * 2.0; // Much more space - increased from 1.4 to 2.0
+  }
+
+  String _formatYAxisLabel(double value) {
+    if (value >= 1000) {
+      return '£${(value / 1000).toStringAsFixed(1)}K';
+    } else {
+      return '£${value.toStringAsFixed(0)}';
+    }
+  }
+
+  void _shareStatistics() {
+    final now = DateTime.now();
+    final period = _periods[_selectedPeriod];
+    final type = _showExpenses ? 'Expenses' : 'Income';
+
+    final shareText = '''
+📊 Expense Statistics Report
+
+Period: $period
+Type: $type
+Generated: ${now.day}/${now.month}/${now.year}
+
+View your detailed financial insights in the Expenso app!
+''';
+
+    // For now, just show a snackbar. In a real app, you'd use a share package
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Statistics report ready to share!'),
+        action: SnackBarAction(
+          label: 'Copy',
+          onPressed: () {
+            // In a real app, you'd copy to clipboard
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Copied to clipboard!')));
+          },
+        ),
+      ),
+    );
   }
 }

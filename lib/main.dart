@@ -3,8 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'logic/bloc/expense_bloc.dart';
 import 'logic/bloc/account_bloc.dart';
 import 'logic/bloc/account_event.dart';
-import 'data/api/notion_api_service.dart';
-import 'data/storage/local_storage_service.dart';
+import 'logic/bloc/expense_event.dart';
+import 'data/repositories/expense_repository.dart';
+import 'data/repositories/account_repository.dart';
 import 'presentation/screens/main_navigation.dart';
 
 void main() {
@@ -16,81 +17,98 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
+    return MultiRepositoryProvider(
       providers: [
-        BlocProvider(
+        RepositoryProvider(create: (context) => AccountRepository()),
+        RepositoryProvider(
           create:
-              (context) => ExpenseBloc(
-                apiService: NotionApiService(
-                  apiKey: 'your_notion_api_key_here',
-                  databaseId: 'your_notion_database_id_here',
-                ),
-                storageService: LocalStorageService(),
+              (context) => ExpenseRepository(
+                accountRepository: context.read<AccountRepository>(),
               ),
         ),
-        BlocProvider(create: (context) => AccountBloc()..add(LoadAccounts())),
       ],
-      child: MaterialApp(
-        title: 'Expenso Tracker',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.green,
-            brightness: Brightness.light,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create:
+                (context) => AccountBloc(
+                  accountRepository: context.read<AccountRepository>(),
+                )..add(const LoadAccounts()),
           ),
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-          cardTheme: CardTheme(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+          BlocProvider(
+            create:
+                (context) => ExpenseBloc(
+                  expenseRepository: context.read<ExpenseRepository>(),
+                  accountBloc: context.read<AccountBloc>(),
+                )..add(const LoadExpenses()),
+          ),
+        ],
+        child: MaterialApp(
+          title: 'Expenso Tracker',
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.green,
+              brightness: Brightness.light,
             ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
+            useMaterial3: true,
+            appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+            cardTheme: CardTheme(
+              elevation: 2,
               shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
               ),
             ),
           ),
-          inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.green,
+              brightness: Brightness.dark,
             ),
-          ),
-        ),
-        darkTheme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.green,
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-          cardTheme: CardTheme(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
+            useMaterial3: true,
+            appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
+            cardTheme: CardTheme(
+              elevation: 2,
               shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
               ),
             ),
           ),
-          inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
-          ),
+          themeMode: ThemeMode.system,
+          home: const MainNavigation(),
+          debugShowCheckedModeBanner: false,
         ),
-        themeMode: ThemeMode.system,
-        home: const MainNavigation(),
-        debugShowCheckedModeBanner: false,
       ),
     );
   }

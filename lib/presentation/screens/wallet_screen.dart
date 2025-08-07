@@ -8,7 +8,7 @@ import '../../logic/bloc/account_event.dart';
 import '../../logic/bloc/account_state.dart';
 import '../../data/models/account.dart';
 import '../widgets/transaction_card.dart';
-import '../widgets/add_account_modal.dart';
+import 'add_account_screen.dart'; // Changed import
 import 'transaction_details_screen.dart';
 import 'all_transactions_screen.dart';
 
@@ -54,7 +54,12 @@ class _WalletScreenState extends State<WalletScreen> {
                     onSelected: (value) {
                       switch (value) {
                         case 'add_account':
-                          _showAddAccountModal(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AddAccountScreen(),
+                            ),
+                          );
                           break;
                         case 'manage_accounts':
                           _showManageAccountsModal(context, accountState);
@@ -104,7 +109,6 @@ class _WalletScreenState extends State<WalletScreen> {
 
   Widget _buildCardsSection(AccountState accountState) {
     final screenHeight = MediaQuery.of(context).size.height;
-
     final accounts = accountState.accounts;
 
     if (accounts.isEmpty) {
@@ -115,28 +119,31 @@ class _WalletScreenState extends State<WalletScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.account_balance_wallet_outlined,
                 size: 64,
-                color: Colors.grey[400],
+                color: Colors.grey,
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'No accounts yet',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.grey),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Add your first account to get started',
-                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
-                onPressed: () => _showAddAccountModal(context),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddAccountScreen(),
+                    ),
+                  );
+                },
                 icon: const Icon(Icons.add),
                 label: const Text('Add Account'),
                 style: ElevatedButton.styleFrom(
@@ -150,7 +157,7 @@ class _WalletScreenState extends State<WalletScreen> {
       );
     }
 
-    return Container(
+    return SizedBox(
       height: screenHeight * 0.3,
       child: Column(
         children: [
@@ -430,15 +437,6 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-  void _showAddAccountModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const AddAccountModal(),
-    );
-  }
-
   void _showManageAccountsModal(
     BuildContext context,
     AccountState accountState,
@@ -461,11 +459,22 @@ class _WalletScreenState extends State<WalletScreen> {
                     subtitle: Text(
                       '${account.type.toUpperCase()} • $_selectedCurrency${account.balance.toStringAsFixed(2)}',
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        _showDeleteConfirmation(context, account);
-                      },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.grey),
+                          onPressed: () {
+                            // TODO: Navigate to Edit Account Screen
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            _showDeleteConfirmation(context, account);
+                          },
+                        ),
+                      ],
                     ),
                   );
                 },

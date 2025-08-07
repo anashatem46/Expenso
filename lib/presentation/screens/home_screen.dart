@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../logic/bloc/expense_bloc.dart';
 import '../../logic/bloc/expense_event.dart';
 import '../../logic/bloc/expense_state.dart';
+import '../../logic/bloc/account_bloc.dart';
+import '../../logic/bloc/account_state.dart';
 import 'all_transactions_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,22 +26,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ExpenseBloc, ExpenseState>(
-      builder: (context, state) {
-        return Scaffold(
-          backgroundColor: Colors.grey[50],
-          body: SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  _buildBalanceCard(state),
-                  _buildTransactionsHistory(state),
-                ],
+    return BlocBuilder<AccountBloc, AccountState>(
+      builder: (context, accountState) {
+        return BlocBuilder<ExpenseBloc, ExpenseState>(
+          builder: (context, expenseState) {
+            return Scaffold(
+              backgroundColor: Colors.grey[50],
+              body: SafeArea(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      _buildBalanceCard(accountState, expenseState),
+                      _buildTransactionsHistory(expenseState),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );
@@ -90,7 +96,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBalanceCard(ExpenseState state) {
+  Widget _buildBalanceCard(
+    AccountState accountState,
+    ExpenseState expenseState,
+  ) {
     return Container(
       margin: EdgeInsets.symmetric(
         horizontal: MediaQuery.of(context).size.width * 0.05,
@@ -144,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            '\$${state.totalBalance.toStringAsFixed(2)}',
+            '£${accountState.totalBalance.toStringAsFixed(2)}',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 36,
@@ -159,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: _buildIncomeExpenseItem(
                     icon: Icons.arrow_downward,
                     label: 'Income',
-                    amount: state.totalIncome,
+                    amount: expenseState.totalIncome,
                     isIncome: true,
                   ),
                 ),
@@ -168,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: _buildIncomeExpenseItem(
                     icon: Icons.arrow_upward,
                     label: 'Expenses',
-                    amount: state.totalExpenses,
+                    amount: expenseState.totalExpenses,
                     isIncome: false,
                   ),
                 ),
@@ -200,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          '\$${amount.toStringAsFixed(2)}',
+          '£${amount.toStringAsFixed(2)}',
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
@@ -337,7 +346,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Text(
-                '${transaction.amount >= 0 ? '+' : '-'}\$${transaction.amount.abs().toStringAsFixed(2)}',
+                '${transaction.amount >= 0 ? '+' : '-'}'
+                '£${transaction.amount.abs().toStringAsFixed(2)}',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

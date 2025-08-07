@@ -14,6 +14,11 @@ Account _$AccountFromJson(Map<String, dynamic> json) => Account(
   number: json['number'] as String,
   iconCodePoint: (json['iconCodePoint'] as num).toInt(),
   colorValue: (json['colorValue'] as num).toInt(),
+  lastModified: DateTime.parse(json['lastModified'] as String),
+  isDeleted: json['isDeleted'] as bool? ?? false,
+  syncStatus:
+      $enumDecodeNullable(_$SyncStatusEnumMap, json['syncStatus']) ??
+      SyncStatus.pending,
 );
 
 Map<String, dynamic> _$AccountToJson(Account instance) => <String, dynamic>{
@@ -24,4 +29,13 @@ Map<String, dynamic> _$AccountToJson(Account instance) => <String, dynamic>{
   'number': instance.number,
   'iconCodePoint': instance.iconCodePoint,
   'colorValue': instance.colorValue,
+  'lastModified': instance.lastModified.toIso8601String(),
+  'isDeleted': instance.isDeleted,
+  'syncStatus': _$SyncStatusEnumMap[instance.syncStatus]!,
+};
+
+const _$SyncStatusEnumMap = {
+  SyncStatus.synced: 'synced',
+  SyncStatus.pending: 'pending',
+  SyncStatus.failed: 'failed',
 };

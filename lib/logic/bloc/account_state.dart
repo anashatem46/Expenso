@@ -8,12 +8,14 @@ class AccountState extends Equatable {
   final List<Account> accounts;
   final String? selectedAccountId;
   final String? errorMessage;
+  final double totalBalance;
 
   const AccountState({
     this.status = AccountStatus.initial,
     this.accounts = const [],
     this.selectedAccountId,
     this.errorMessage,
+    this.totalBalance = 0.0,
   });
 
   AccountState copyWith({
@@ -21,12 +23,14 @@ class AccountState extends Equatable {
     List<Account>? accounts,
     String? selectedAccountId,
     String? errorMessage,
+    double? totalBalance,
   }) {
     return AccountState(
       status: status ?? this.status,
       accounts: accounts ?? this.accounts,
       selectedAccountId: selectedAccountId ?? this.selectedAccountId,
       errorMessage: errorMessage ?? this.errorMessage,
+      totalBalance: totalBalance ?? this.totalBalance,
     );
   }
 
@@ -52,15 +56,12 @@ class AccountState extends Equatable {
     return accounts.where((account) => account.type == 'investment').toList();
   }
 
-  double get totalBalance {
-    return accounts.fold(0.0, (sum, account) => sum + account.balance);
-  }
-
   @override
   List<Object?> get props => [
     status,
     accounts,
     selectedAccountId,
     errorMessage,
+    totalBalance,
   ];
 }

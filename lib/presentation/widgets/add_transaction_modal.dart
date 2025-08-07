@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 import '../../logic/bloc/expense_bloc.dart';
 import '../../logic/bloc/expense_event.dart';
 import '../../logic/bloc/account_bloc.dart';
@@ -19,6 +20,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _reasonController = TextEditingController();
+  final _uuid = Uuid();
 
   String _selectedCategory = 'Food';
   DateTime _selectedDate = DateTime.now();
@@ -588,7 +590,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
     try {
       final amount = double.parse(_amountController.text);
       final expense = Expense(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: _uuid.v4(),
         title: _reasonController.text.trim(),
         amount:
             _isIncome
@@ -599,6 +601,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
         description: null,
         currency: _selectedCurrency,
         accountId: _selectedAccountId ?? 'default',
+        lastModified: DateTime.now(),
       );
 
       context.read<ExpenseBloc>().add(AddExpense(expense));
